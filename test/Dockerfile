@@ -1,51 +1,29 @@
-#
-# Ubuntu Dockerfile
-#
-# https://github.com/dockerfile/ubuntu
-#
-
-# Pull base image.
 FROM ubuntu:14.04
+MAINTAINER Alexander Vynnyk <cosmonaut.ok@zoho.com>
 
-# Install.
-RUN \
-  sed -i 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
-  echo 'deb http://www.emdebian.org/debian/ unstable main' >> /etc/apt/sources.list && \
-  apt-get update && \
-  apt-get -y upgrade && \
-  apt-get install -y emdebian-archive-keyring && \
-  apt-get install -y build-essential && \
-  apt-get install -y openssh-server && \
-  apt-get install -y gcc-arm-linux-gnueabihf debootstrap u-boot-tools device-tree-compiler binutils-arm-linux-gnueabi libncurses5-dev fakeroot u-boot-tools zlib1g-dev libncurses5-dev && \
-  apt-get install -y sudo python software-properties-common && \
-  apt-get install -y curl git man unzip emacs23-nox wget mc && \
-  rm -rf /var/lib/apt/lists/*
+RUN dpkg --add-architecture i386
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server sudo python
 
-# Add files.
-# ADD ~/.bashrc /root/.bashrc
-# ADD ~/.gitconfig /root/.gitconfig
-# ADD ~/.scripts /root/.scripts
-
-# Configure
 RUN mkdir /var/run/sshd
 RUN echo 'root:root' | chpasswd
 RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
-RUN useradd -m vagrant -s /bin/bash
-RUN echo 'vagrant:vagrant' | chpasswd
+RUN useradd -m kitchen -s /bin/bash
+RUN echo 'kitchen:kitchen' | chpasswd
 RUN cp /etc/sudoers /tmp/sudoers
 RUN chmod 0660 /tmp/sudoers
-RUN echo 'vagrant   ALL=(ALL:ALL) NOPASSWD:ALL' >> /tmp/sudoers
+RUN echo 'kitchen   ALL=(ALL:ALL) NOPASSWD:ALL' >> /tmp/sudoers
 RUN chmod 0440 /tmp/sudoers
 RUN mv -f /tmp/sudoers /etc/sudoers
-RUN mkdir /home/vagrant/.ssh/
+# RUN mkdir /home/kitchen/.ssh/
 
-# ADD id_rsa.pub /home/vagrant/.ssh/authorized_keys
-# ADD id_rsa.pub /home/vagrant/.ssh/id_rsa.pub
-# ADD id_rsa /home/vagrant/.ssh/id_rsa
-# RUN chmod 400 /home/vagrant/.ssh/authorized_keys
-# RUN chown vagrant:vagrant /home/vagrant/.ssh/*
-# RUN chmod 600 /home/vagrant/.ssh/*
+# ADD id_rsa.pub /home/kitchen/.ssh/authorized_keys
+# ADD id_rsa.pub /home/kitchen/.ssh/id_rsa.pub
+# ADD id_rsa /home/kitchen/.ssh/id_rsa
+# RUN chmod 400 /home/kitchen/.ssh/authorized_keys
+# RUN chown kitchen:kitchen /home/kitchen/.ssh/*
+# RUN chmod 600 /home/kitchen/.ssh/*
 
 # SSH login fix. Otherwise user is kicked off after login
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
@@ -53,18 +31,5 @@ RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so
 ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
-# Set environment variables.
-ENV HOME /root
-
-# Define working directory.
-WORKDIR /root
-
-EXPOSE 22
-
-# get kernel code
-RUN git clone -b sunxi-3.4 https://github.com/linux-sunxi/linux-sunxi ~/linux-sunxi
-RUN wget "https://raymii.org/s/inc/downloads/olinux/a10/kernel_config_raymii" -O ~/linux-sunxi/.config
-
-# Define default command.
-CMD ["/usr/sbin/sshd", "-D"]
-
+# EXPOSE 22
+# CMD ["/usr/sbin/sshd", "-D"]

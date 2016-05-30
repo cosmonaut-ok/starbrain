@@ -64,3 +64,5 @@ Environments.md
 #######################
 .idea
 *.iml
+Gemfile.lock
+Berksfile.lock
