@@ -1,8 +1,21 @@
-# execute 'crosscompile sunxi kernel' do
-#   command 'make -j$(nproc) ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage modules'
-#   cwd '/home/kitchen/linux-sunxi'
-#   timeout 3600
-# end
+execute 'configure board' do
+  command './configure pcduino'
+  cwd "#{Chef::Config[:file_cache_path]}/linux-pcduino"
+  notifies :create, 'template[create choosen_board.mk]' 
+end
+
+template 'create choosen_board.mk' do
+  source 'choosen_board.mk.erb'
+  path "#{Chef::Config[:file_cache_path]}/linux-pcduino/chosen_board.mk"
+  notifies :run, 'execute[crosscompile sunxi kernel]', :immediately
+end
+
+execute 'crosscompile sunxi kernel' do
+  command 'make'
+  cwd "#{Chef::Config[:file_cache_path]}/linux-pcduino"
+  timeout 3600
+  action :nothing
+end
 
 # execute 'making modules tree' do
 #   command 'make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install'
@@ -31,24 +44,8 @@
 
 
 ## compiling wifi driver
-
-execute 'Getting proprietary wifi driver' do
-  command 'wget "http://12244.wpc.azureedge.net/8012244/drivers/rtdrivers/cn/wlan/0001-RTL8188C_8192C_USB_linux_v4.0.2_9000.20130911.zip" -O 0001-RTL819xSU_usb_linux_v2.6.6.0.20120405.zip'
-  cwd '/home/kitchen'
-end
-
-execute 'Unzip proprietary wifi driver' do
-  command 'unzip 0001-RTL819xSU_usb_linux_v2.6.6.0.20120405.zip'
-  cwd '/home/kitchen'
-end
-
-git 'RTL hostapd' do
-  repository 'https://github.com/jenssegers/RTL8188-hostapd'
-  action :sync
-  destination '/home/kitchen/RTL8188-hostapd'
-end
-
 # execute 'Compile RTL hostapd' do
 #   command 'make install'
 #   cwd '/home/kitchen/RTL8188-hostapd/hostapd'
+#   only_if { node['starbrain']['hotspot'] }
 # end

@@ -30,3 +30,6 @@ suites:
     run_list:
     - recipe[starbrain::default]
     attributes:
+      starbrain:
+        compile: true
+        hotspot: true
